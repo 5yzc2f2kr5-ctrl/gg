@@ -20,8 +20,6 @@ def load_widget_html(widget_name: str) -> str:
 window.renderWidget && window.renderWidget("{widget_name}");
 </script>"""
 
-# ---------- DATA TOOLS (no UI attached; pure content generation) ----------
-
 @mcp.tool()
 def get_scene(chapter: int, chapter_title: str, day: int, date_str: str,
               scene_title: str, time_str: str, location: str,
@@ -60,8 +58,6 @@ def get_option_cards(section_title: str, cards: list[dict]) -> dict:
     numbered = [{"option_number": i + 1, **c} for i, c in enumerate(cards)]
     return {"section_title": section_title, "cards": numbered}
 
-# ---------- RENDER TOOLS (carry the widget resource) ----------
-
 @mcp.tool(
     meta={"ui": {"resourceUri": "ui://interactive-fiction/scene.html"}}
 )
@@ -86,8 +82,6 @@ def render_option_cards_widget(cards_data: dict) -> dict:
     first and pass its output here."""
     return {"structuredContent": cards_data}
 
-# ---------- CALLBACK TOOL (fired when the widget's Confirm button is clicked) ----------
-
 @mcp.tool()
 def decision_selected(character: str, letter: str) -> dict:
     """Called automatically when a user clicks Confirm on a decision widget.
@@ -95,8 +89,6 @@ def decision_selected(character: str, letter: str) -> dict:
     from the model side -- the model should treat this as the reader's
     answer to the pending decision and produce the next SCENE block."""
     return {"character": character, "chosen_letter": letter}
-
-# ---------- RESOURCES (the actual widget HTML/JS bundles) ----------
 
 @mcp.resource("ui://interactive-fiction/scene.html")
 def scene_resource():
@@ -111,5 +103,6 @@ def option_cards_resource():
     return load_widget_html("option_cards")
 
 if __name__ == "__main__":
-    # streamable-http is the transport mcphosting.io expects
-    mcp.run(transport="streamable-http")
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    mcp.run(transport="streamable-http", host="0.0.0.0", port=port)
