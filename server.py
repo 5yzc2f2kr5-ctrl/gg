@@ -1,4 +1,4 @@
-"""
+﻿"""
 Interactive Fiction MCP Server (Apps SDK)
 Implements the v2 format spec: SCENE, DECISION, OPTION-CARD blocks.
 Pre-configured for mcphosting.io deployment (streamable-http transport).
@@ -9,16 +9,18 @@ from pathlib import Path
 
 mcp = FastMCP("interactive-fiction")
 
-WIDGET_JS = (Path(__file__).parent.parent / "web" / "dist" / "component.js")
+WIDGET_JS = (Path(__file__).parent / "web" / "dist" / "component.js")
+
 
 def load_widget_html(widget_name: str) -> str:
     """Wrap the bundled JS into a minimal HTML shell the Apps SDK iframe loads."""
-    js = WIDGET_JS.read_text() if WIDGET_JS.exists() else "/* run the esbuild step first */"
+    js = WIDGET_JS.read_text() if WIDGET_JS.exists() else "/* component.js not found */"
     return f"""<div id="root"></div>
 <script type="module">
 {js}
 window.renderWidget && window.renderWidget("{widget_name}");
 </script>"""
+
 
 @mcp.tool()
 def get_scene(chapter: int, chapter_title: str, day: int, date_str: str,
@@ -32,6 +34,7 @@ def get_scene(chapter: int, chapter_title: str, day: int, date_str: str,
         "scene_title": scene_title, "time_str": time_str, "location": location,
         "image_prompt": image_prompt, "paragraphs": paragraphs,
     }
+
 
 @mcp.tool()
 def get_decision(character: str, options: list[dict], narrator_role: str) -> dict:
@@ -48,6 +51,7 @@ def get_decision(character: str, options: list[dict], narrator_role: str) -> dic
                       "description": f"{character} has a different idea."})
     return {"character": character, "options": lettered}
 
+
 @mcp.tool()
 def get_option_cards(section_title: str, cards: list[dict]) -> dict:
     """Return structured option-card data. `cards` is a list of 2-4 dicts:
@@ -58,13 +62,15 @@ def get_option_cards(section_title: str, cards: list[dict]) -> dict:
     numbered = [{"option_number": i + 1, **c} for i, c in enumerate(cards)]
     return {"section_title": section_title, "cards": numbered}
 
+
 @mcp.tool(
     meta={"ui": {"resourceUri": "ui://interactive-fiction/scene.html"}}
 )
 def render_scene_widget(scene_data: dict) -> dict:
     """Render the SCENE block as a rich widget. Always call get_scene first
     and pass its full output as scene_data."""
-    return {"structuredContent": scene_data}
+    return scene_data
+
 
 @mcp.tool(
     meta={"ui": {"resourceUri": "ui://interactive-fiction/decision.html"}}
@@ -72,7 +78,8 @@ def render_scene_widget(scene_data: dict) -> dict:
 def render_decision_widget(decision_data: dict) -> dict:
     """Render the DECISION block (lettered options + confirm button) as a
     widget. Always call get_decision first and pass its output here."""
-    return {"structuredContent": decision_data}
+    return decision_data
+
 
 @mcp.tool(
     meta={"ui": {"resourceUri": "ui://interactive-fiction/option_cards.html"}}
@@ -80,7 +87,8 @@ def render_decision_widget(decision_data: dict) -> dict:
 def render_option_cards_widget(cards_data: dict) -> dict:
     """Render the OPTION-CARD block as a widget. Always call get_option_cards
     first and pass its output here."""
-    return {"structuredContent": cards_data}
+    return cards_data
+
 
 @mcp.tool()
 def decision_selected(character: str, letter: str) -> dict:
@@ -90,17 +98,21 @@ def decision_selected(character: str, letter: str) -> dict:
     answer to the pending decision and produce the next SCENE block."""
     return {"character": character, "chosen_letter": letter}
 
-@mcp.resource("ui://interactive-fiction/scene.html")
+
+@mcp.resource("ui://interactive-fiction/scene.html", mime_type="text/html+skybridge")
 def scene_resource():
     return load_widget_html("scene")
 
-@mcp.resource("ui://interactive-fiction/decision.html")
+
+@mcp.resource("ui://interactive-fiction/decision.html", mime_type="text/html+skybridge")
 def decision_resource():
     return load_widget_html("decision")
 
-@mcp.resource("ui://interactive-fiction/option_cards.html")
+
+@mcp.resource("ui://interactive-fiction/option_cards.html", mime_type="text/html+skybridge")
 def option_cards_resource():
     return load_widget_html("option_cards")
+
 
 if __name__ == "__main__":
     import os
